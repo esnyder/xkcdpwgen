@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+
+"""
+See http://xkcd.com/936/
+
+Basic argument is that picking 4 random common words for a password 
+gives you about 44 bits of entropy, vs, say 28 bits of entropy for 
+a "strong" (but patterned to be kinda memorable) random password.
+
+This lets you specify how strong a password you want (either in bits of 
+entropy, or as equivalent to a random string of printable ascii characters 
+of some given length) and generates candidate passwords as a list of 
+words you should concatenate together.
+
+It defaults to 44 bits of entropy as per the cartoon.
+"""
+
+import random, math
+
+def normalform(w):
+    w = w.strip()
+    return w.split("'")[0].lower()
+
+def readwords(fname):
+    return open(fname, "r").readlines()
+
+def makebylen():
+    bylen = dict()
+    for w in readwords("/usr/share/dict/american-english"):
+        w = normalform(w)
+        l = len(w)
+        if not bylen.has_key(l):
+            bylen[l] = dict()
+        bylen[l][w] = 1
+    return bylen
+
+def password(words, nwords, maxwordlen):
+    reslist = list()
+    fmtstr = "%%-%ds" % maxwordlen
+    while len(reslist) < nwords:
+        reslist.append(fmtstr % random.sample(words, 1)[0])
+    return ' '.join(reslist)
+
+def bits(n):
+    bits = 0
+    while n > 1:
+        n = n/2
+        bits += 1
+    return bits
+
+def passwords(bylen, bitsentropy, count):
+    result = list()
+    words = list()
+
+    maxwordlen = 11
+    for wordlen in xrange(3, maxwordlen+1):
+        words.extend(bylen[wordlen].keys())
+    wordbits = bits(len(words))
+    nwords = math.ceil(float(bitsentropy) / float(wordbits))
+    print "Final wordlist contains", len(words), "words.  Picking", nwords, "words provides at least", wordbits*nwords, "bits of entropy."
+    for x in xrange(0, count):
+        result.append(password(words, nwords, maxwordlen))
+    return result
+
+"""
+xkcdpwgen -b,--bitsentropy=<num> should give a password with at least <num> bits of entropy
+xkcdpwgen -e,--equivalent=<num> should give a password as strong as a string of <num> totally random symbols
+"""
+
+if __name__ == "__main__":
+    bl = makebylen()
+    bitsentropy = 44
+    numtogen = 20
+    for pw in passwords(bl, bitsentropy, numtogen):
+        print pw
+
+
