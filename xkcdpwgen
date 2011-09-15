@@ -1,20 +1,5 @@
 #!/usr/bin/env python
 
-"""
-See http://xkcd.com/936/
-
-Basic argument is that picking 4 random common words for a password 
-gives you about 44 bits of entropy, vs, say 28 bits of entropy for 
-a "strong" (but patterned to be kinda memorable) random password.
-
-This lets you specify how strong a password you want (either in bits of 
-entropy, or as equivalent to a random string of printable ascii characters 
-of some given length) and generates candidate passwords as a list of 
-words you should concatenate together.
-
-It defaults to 44 bits of entropy as per the cartoon.
-"""
-
 import random, math
 
 def normalform(w):
@@ -62,16 +47,39 @@ def passwords(bylen, bitsentropy, count):
         result.append(password(words, nwords, maxwordlen))
     return result
 
-"""
-xkcdpwgen -b,--bitsentropy=<num> should give a password with at least <num> bits of entropy
-xkcdpwgen -e,--equivalent=<num> should give a password as strong as a string of <num> totally random symbols
-"""
 
 if __name__ == "__main__":
+    from optparse import OptionParser
+    usage = """usage: %prog [options] arg1 arg2
+
+See http://xkcd.com/936/
+
+Basic argument is that picking 4 random common words for a password 
+gives you about 44 bits of entropy, vs, say 28 bits of entropy for 
+a "strong" (but patterned to be kinda memorable) random password.
+
+xkcdpwgen uses a dictionary to generate a list of words in "normal" form, 
+and generate candidate passwords as a few random dictionary words in a row.
+Given the length of the word list that we're drawing from, we can then
+pick enough words to satisfy given strenght criteria.
+
+It defaults to 44 bits of entropy as per the cartoon.
+"""
+    parser = OptionParser(usage=usage)    
+
+    parser.add_option("-b", "--bitsentropy", type="int", dest="bitsentropy", 
+                      help="generate passwords with at least NUM bits of entropy", 
+                      metavar="NUM", default=44)
+    #parser.add_option("-e", "--equivalent", dest="equivalent", type="int",
+    #                  help="generate passwords as strong as a string of LEN random printable ascii symbols", metavar="LEN")
+    parser.add_option("-n", "--num", dest="numtogen", type="int",
+                      help="number of candidate passwords to generate", 
+                      metavar="NUM", default=20)
+
+    (options, args) = parser.parse_args()
+
     bl = makebylen()
-    bitsentropy = 44
-    numtogen = 20
-    for pw in passwords(bl, bitsentropy, numtogen):
+    for pw in passwords(bl, options.bitsentropy, options.numtogen):
         print pw
 
 
